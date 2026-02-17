@@ -63,11 +63,17 @@ async function init() {
   setupFriends();
   populateNationalities();
 
-  // Check current session
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    handleLoggedUser(session.user);
-  }
+  // Escuchar cambios en la sesión para que sea persistente
+  supabase.auth.onAuthStateChange((event, session) => {
+    console.log("Auth Event:", event);
+    if (session) {
+      handleLoggedUser(session.user);
+    } else {
+      state.user = null;
+      state.profile = null;
+      switchView('login');
+    }
+  });
 }
 
 // --- Auth Logic ---
@@ -281,14 +287,37 @@ function setupFriends() {
 }
 
 async function fetchFriends() {
-  // En Supabase necesitamos una tabla 'friends' con (user_id, friend_id)
-  const { data, error } = await supabase
-    .from('friends')
-    .select('friend_id, profiles!friends_friend_id_fkey(username)')
-    .eq('user_id', state.user.id);
+  try {
+    // Buscamos en la tabla 'friends' y traemos el perfil del amigo
+    // Nota: Usamos una consulta más robusta para evitar errores de relación
+    const { data, error } = await supabase
+      .from('friends')
+      .select('friend_id')
+      .eq('user_id', state.user.id);
 
-  if (!error) {
-    state.friends = data.map(f => ({ id: f.friend_id, username: f.profiles.username }));
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      const friendIds = data.map(f => f.friend_id);
+
+      // Ahora traemos los nombres de usuario de esos IDs
+      const { data: profiles, error: pError } = await supabase
+        .from('profiles')
+        .select('id, username')
+        .in('id', friendIds);
+
+      if (pError) throw pError;
+
+      state.friends = profiles || [];
+    } else {
+      state.friends = [];
+    }
+
+    renderFriends();
+  } catch (err) {
+    console.error("Error fetching friends:", err);
+    // Intentamos cargar la lista vacía si hay error para no bloquear la UI
+    state.friends = [];
     renderFriends();
   }
 }
