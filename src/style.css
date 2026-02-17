@@ -140,28 +140,61 @@ body {
 #home-view {
   justify-content: center;
   text-align: center;
-  background: radial-gradient(circle at center, #374151 0%, #111827 100%);
+  background: radial-gradient(circle at center, #1f2937 0%, #111827 100%);
+  gap: 1.5rem;
+}
+
+.user-status-card {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem 2rem;
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1rem;
+}
+
+#user-greeting {
+  font-weight: 700;
+  color: var(--panini-accent);
+  font-size: 1.2rem;
+  margin-bottom: 0.2rem;
+}
+
+#user-id-display {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  letter-spacing: 1px;
+}
+
+.logout-link {
+  font-size: 0.9rem !important;
+  opacity: 0.5;
+  margin-top: 3rem !important;
+  text-decoration: underline;
+}
+
+.logout-link:hover {
+  opacity: 1;
 }
 
 .app-title {
   font-family: 'Pacifico', cursive;
   font-size: 5rem;
   color: var(--panini-accent);
-  text-shadow: 4px 4px 0px #000;
-  margin-bottom: 0.5rem;
+  text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8);
+  margin-bottom: 0.1rem;
 }
 
 .app-subtitle {
-  font-size: 1.5rem;
-  opacity: 0.8;
-  margin-bottom: 3rem;
-  letter-spacing: 2px;
+  font-size: 1rem;
+  opacity: 0.5;
+  margin-bottom: 2rem;
+  letter-spacing: 3px;
   text-transform: uppercase;
+  font-weight: 300;
 }
 
 .home-actions {
   display: flex;
-  gap: 1.5rem;
   flex-wrap: wrap;
   justify-content: center;
 }
