@@ -72,50 +72,82 @@ async function init() {
 
 // --- Auth Logic ---
 function setupAuth() {
+  const authChoice = document.getElementById('auth-choice');
   const loginForm = document.getElementById('login-form');
   const registerForm = document.getElementById('register-form');
-  const showRegister = document.getElementById('btn-show-register');
-  const showLogin = document.getElementById('btn-show-login');
 
-  showRegister.onclick = () => {
-    loginForm.classList.add('hidden-view');
+  const showLoginBtn = document.getElementById('btn-show-login-choice');
+  const showRegisterBtn = document.getElementById('btn-show-register-choice');
+  const backBtnL = document.getElementById('btn-back-to-choice-l');
+  const backBtnR = document.getElementById('btn-back-to-choice-r');
+
+  showLoginBtn.onclick = () => {
+    authChoice.classList.add('hidden-view');
+    loginForm.classList.remove('hidden-view');
+  };
+
+  showRegisterBtn.onclick = () => {
+    authChoice.classList.add('hidden-view');
     registerForm.classList.remove('hidden-view');
   };
 
-  showLogin.onclick = () => {
+  const backToChoice = () => {
+    loginForm.classList.add('hidden-view');
     registerForm.classList.add('hidden-view');
-    loginForm.classList.remove('hidden-view');
+    authChoice.classList.remove('hidden-view');
   };
+
+  backBtnL.onclick = backToChoice;
+  backBtnR.onclick = backToChoice;
 
   // Login
   loginForm.onsubmit = async (e) => {
     e.preventDefault();
+    const btn = e.submitter;
+    const originalText = btn.textContent;
+    btn.textContent = 'Cargando...';
+    btn.disabled = true;
+
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return alert(error.message);
+
+    btn.textContent = originalText;
+    btn.disabled = false;
+
+    if (error) return alert('Error: ' + error.message);
     handleLoggedUser(data.user);
   };
 
   // Register
   registerForm.onsubmit = async (e) => {
     e.preventDefault();
+    const btn = e.submitter;
+    const originalText = btn.textContent;
+    btn.textContent = 'Creando...';
+    btn.disabled = true;
+
     const username = document.getElementById('reg-username').value;
     const email = document.getElementById('reg-email').value;
     const password = document.getElementById('reg-password').value;
 
-    // 1. Sign Up
     const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) return alert(error.message);
 
-    // 2. Create Profile
+    if (error) {
+      btn.textContent = originalText;
+      btn.disabled = false;
+      return alert(error.message);
+    }
+
     const { error: pError } = await supabase.from('profiles').insert([
       { id: data.user.id, username, email }
     ]);
-    if (pError) return alert('Error creando perfil: ' + pError.message);
 
-    alert('Registro exitoso. Revisa tu email para confirmar (si está activado).');
+    btn.textContent = originalText;
+    btn.disabled = false;
+
+    if (pError) return alert('Error perfil: ' + pError.message);
     handleLoggedUser(data.user);
   };
 
@@ -123,6 +155,7 @@ function setupAuth() {
     await supabase.auth.signOut();
     state.user = null;
     state.profile = null;
+    backToChoice();
     switchView('login');
   };
 }
