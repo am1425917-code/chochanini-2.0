@@ -334,8 +334,12 @@ function setupNavigation() {
 }
 
 function switchView(viewName) {
-  Object.values(views).forEach(v => v.classList.add('hidden-view'));
+  Object.values(views).forEach(v => {
+    v.classList.add('hidden-view');
+    v.classList.remove('active-view');
+  });
   views[viewName].classList.remove('hidden-view');
+  views[viewName].classList.add('active-view');
   state.currentView = viewName;
 }
 
