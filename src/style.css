@@ -79,6 +79,14 @@ body {
   gap: 1.5rem;
 }
 
+.auth-form.hidden-view {
+  display: none !important;
+}
+
+.auth-actions.hidden-view {
+  display: none !important;
+}
+
 .auth-actions {
   display: flex;
   flex-direction: column;
