@@ -108,19 +108,25 @@
 
     <!-- View: Album Grid -->
     <section id="album-view" class="view hidden-view">
-      <header class="album-header">
-        <button id="btn-back-home" class="icon-btn" title="Volver al Inicio">←</button>
-        <h2 class="album-name" id="album-title">Mi Álbum</h2>
+      <header class="main-header" style="margin-bottom: 1rem;">
+        <button id="btn-back-home" class="icon-btn" style="position: absolute; left: 20px; top: 30px;">←</button>
+        <h2 id="album-title" class="app-title" style="font-size: 2.5rem;">Mi Álbum</h2>
       </header>
 
-      <main class="sticker-grid" id="albumGrid">
-        <!-- Panini stickers will be injected here -->
-      </main>
+      <div id="stats-container" class="global-stats-bar">
+        <p class="global-stats-title">Felicidades. La calidad de las chochas que consumes es de:</p>
+        <div class="global-stats-value"><span id="average-stars-display">0.0</span> <span
+            style="color: #ffcc00;">★</span></div>
+      </div>
+
+      <div id="albumGrid" class="album-grid">
+        <!-- Stickers go here -->
+      </div>
 
       <div class="fab-container">
-        <button id="addChochaBtn" class="fab-btn" title="Añadir Personaje">
+        <button id="addChochaBtn" class="fab-btn">
           <span class="icon">+</span>
-          <span class="btn-text">Personaje</span>
+          <span class="text">Personaje</span>
         </button>
       </div>
     </section>
@@ -244,15 +250,18 @@
     </div>
 
     <div id="detail-modal" class="modal hidden-modal">
-      <div class="modal-content detail-card-content">
-        <div id="detail-body">
-          <!-- Content injected by JS -->
-        </div>
-        <button id="btn-close-detail" class="primary-btn">Cerrar y Volver</button>
+      <button class="close-modal" id="btn-close-detail" style="top: 10px; right: 10px;">&times;</button>
+      <div class="modal-body" id="detail-body">
+        <!-- Detalle cargado por JS -->
+      </div>
+      <div class="detail-actions" style="padding: 1rem 2rem 2rem;">
+        <button id="btn-edit-chocha" class="primary-btn btn-edit">Editar</button>
+        <button id="btn-delete-chocha" class="primary-btn btn-delete">Eliminar</button>
       </div>
     </div>
-
   </div>
+
+  <input type="hidden" id="edit-chocha-id">
   <script type="module" src="/src/main.js"></script>
 </body>
 

@@ -231,7 +231,9 @@ async function addNewChocha() {
   // Conversion for storage (Base64 for simplicity in MVP, Storage in future)
   const reader = new FileReader();
   reader.onload = async (f) => {
-    const newChar = {
+    const editId = document.getElementById('edit-chocha-id').value;
+
+    const charData = {
       user_id: state.user.id,
       name,
       age,
@@ -247,8 +249,15 @@ async function addNewChocha() {
       average_rating: parseFloat(averageRating)
     };
 
-    const { error } = await supabase.from('characters').insert([newChar]);
-    if (error) return alert('Error guardando: ' + error.message);
+    if (editId) {
+      // Update
+      const { error } = await supabase.from('characters').update(charData).eq('id', editId);
+      if (error) return alert('Error al actualizar: ' + error.message);
+    } else {
+      // Insert
+      const { error } = await supabase.from('characters').insert([charData]);
+      if (error) return alert('Error guardando: ' + error.message);
+    }
 
     modal.classList.add('hidden-modal');
     fetchMyCharacters();
@@ -377,6 +386,20 @@ function renderAlbum() {
   albumGrid.innerHTML = '';
   const sorted = [...state.chochas].sort((a, b) => b.average_rating - a.average_rating);
 
+  // Calculate Global average for the stats bar
+  const total = state.chochas.reduce((acc, c) => acc + c.average_rating, 0);
+  const globalAvg = state.chochas.length > 0 ? (total / state.chochas.length).toFixed(1) : "0.0";
+
+  const statsContainer = document.getElementById('stats-container');
+  const avgDisplay = document.getElementById('average-stars-display');
+
+  if (state.viewingFriendId) {
+    statsContainer.style.display = 'none'; // Hide stats when viewing others
+  } else {
+    statsContainer.style.display = 'block';
+    avgDisplay.textContent = globalAvg;
+  }
+
   sorted.forEach(chocha => {
     const card = document.createElement('div');
     card.className = 'panini-sticker';
@@ -415,6 +438,9 @@ function openDetailModal(chocha) {
   const gorduraLabel = { '5': 'Flaca', '4': 'Promedio', '2': 'Gorda', '1': 'Volqueta' }[chocha.characteristics.gordura];
   const colorLabel = { '5': 'Blanquita', '4': 'Morenita', '3': 'Negrita' }[chocha.characteristics.color];
 
+  // Helper to render yellow stars
+  const renderStars = (num) => `<span style="color: #ffcc00">${'★'.repeat(num)}</span>`;
+
   detailBody.innerHTML = `
     <div class="detail-header">
       <span style="font-size: 3rem;">${chocha.nationality}</span>
@@ -425,18 +451,84 @@ function openDetailModal(chocha) {
     </div>
     <div class="detail-main-info">
       <h2 class="app-title" style="font-size: 2.5rem; margin:0; line-height:1.2;">${chocha.name}</h2>
-      <img src="${chocha.image_data}" class="detail-image" alt="${chocha.name}">
-      <p style="font-style: italic; opacity: 0.8;">"${chocha.desc || 'Sin descripción.'}"</p>
+      <img src="${chocha.image_data}" class="detail-image" alt="${chocha.name}" style="border: 2px solid #ffcc00;">
+      <p style="font-style: italic; opacity: 0.8; margin-top: 10px;">"${chocha.desc || 'Sin descripción.'}"</p>
     </div>
     <div class="detail-stats-grid">
-      <div class="detail-skill-row"><span>Mamando</span><span>${'★'.repeat(chocha.skills.mamando)}</span></div>
-      <div class="detail-skill-row"><span>Brincando</span><span>${'★'.repeat(chocha.skills.brincando)}</span></div>
-      <div class="detail-skill-row"><span>Movimiento</span><span>${'★'.repeat(chocha.skills.movimiento)}</span></div>
-      <div class="detail-skill-row"><span>Gordura</span><span>${gorduraLabel}</span></div>
-      <div class="detail-skill-row"><span>Color</span><span>${colorLabel}</span></div>
+      <div class="detail-skill-row"><span>Mamando</span><span>${renderStars(chocha.skills.mamando)}</span></div>
+      <div class="detail-skill-row"><span>Brincando</span><span>${renderStars(chocha.skills.brincando)}</span></div>
+      <div class="detail-skill-row"><span>Movimiento</span><span>${renderStars(chocha.skills.movimiento)}</span></div>
+      <div class="detail-skill-row"><span>Gordura</span><span style="color: #ffcc00">${gorduraLabel}</span></div>
+      <div class="detail-skill-row"><span>Color</span><span style="color: #ffcc00">${colorLabel}</span></div>
     </div>
   `;
+
+  // Actions for Edit and Delete
+  const btnEdit = document.getElementById('btn-edit-chocha');
+  const btnDelete = document.getElementById('btn-delete-chocha');
+
+  if (state.viewingFriendId) {
+    btnEdit.parentElement.style.display = 'none';
+  } else {
+    btnEdit.parentElement.style.display = 'flex';
+    btnEdit.onclick = () => prepareEdit(chocha);
+    btnDelete.onclick = () => deleteChocha(chocha.id);
+  }
+
   detailModal.classList.remove('hidden-modal');
+}
+
+async function deleteChocha(id) {
+  if (!confirm('¿Seguro que quieres eliminar este personaje?')) return;
+  const { error } = await supabase.from('characters').delete().eq('id', id);
+  if (error) return alert("Error al eliminar: " + error.message);
+
+  detailModal.classList.add('hidden-modal');
+  fetchMyCharacters();
+}
+
+function prepareEdit(chocha) {
+  detailModal.classList.add('hidden-modal');
+  modal.classList.remove('hidden-modal');
+
+  document.getElementById('modal-title').textContent = "Editar Personaje";
+  document.getElementById('edit-chocha-id').value = chocha.id;
+
+  // Populate fields
+  document.getElementById('chochaName').value = chocha.name;
+  document.getElementById('chochaAge').value = chocha.age;
+  document.getElementById('chochaDesc').value = chocha.desc || '';
+  document.getElementById('chochaAcqDate').value = chocha.acq_date;
+  document.getElementById('chochaIsVigente').checked = chocha.is_vigente;
+  document.getElementById('chochaDepDate').value = chocha.dep_date || '';
+  document.getElementById('depDateGroup').style.display = chocha.is_vigente ? 'none' : 'block';
+
+  // Nationality
+  for (let opt of nationalitySelect.options) {
+    if (opt.value === chocha.country_code) {
+      nationalitySelect.value = opt.value;
+      break;
+    }
+  }
+
+  // Characteristics
+  document.getElementById('chochaGordura').value = chocha.characteristics.gordura;
+  document.getElementById('chochaColor').value = chocha.characteristics.color;
+
+  // Skills (Stars)
+  state.tempSkills = { ...chocha.skills };
+  document.querySelectorAll('.star-rating').forEach(cont => {
+    const skillName = cont.dataset.skill;
+    const val = state.tempSkills[skillName];
+    cont.querySelectorAll('.star').forEach(s => {
+      s.classList.toggle('active', parseInt(s.dataset.value) <= val);
+    });
+  });
+
+  // Photo preview
+  photoPreview.style.backgroundImage = `url(${chocha.image_data})`;
+  photoPreview.style.backgroundSize = 'cover';
+  photoPreview.innerHTML = '';
 }
 
 function formatDate(date) {
@@ -448,6 +540,8 @@ function setupModal() {
   document.getElementById('addChochaBtn').onclick = () => {
     modal.classList.remove('hidden-modal');
     document.getElementById('addChochaForm').reset();
+    document.getElementById('modal-title').textContent = "Nuevo Personaje";
+    document.getElementById('edit-chocha-id').value = "";
     state.tempSkills = { mamando: 0, brincando: 0, movimiento: 0 };
     document.querySelectorAll('.star').forEach(s => s.classList.remove('active'));
     photoPreview.style.backgroundImage = 'none';
