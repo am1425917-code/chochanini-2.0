@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chochanini - Álbum Web App</title>
+  <meta name="description" content="Una aplicación web estilo álbum Panini para coleccionar tus mejores chochas.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Pacifico&family=Permanent+Marker&family=Anton&display=swap"
+    rel="stylesheet">
+</head>
+
+<body>
+  <div id="app">
+
+    <!-- View: Home Screen -->
+    <section id="home-view" class="view active-view">
+      <header class="main-header">
+        <h1 class="app-title">Chochanini</h1>
+        <p class="app-subtitle">Colecciona momentos legendarios</p>
+      </header>
+      <div class="home-actions">
+        <button id="btn-my-album" class="primary-btn">Mi Álbum</button>
+      </div>
+    </section>
+
+    <!-- View: Album Grid -->
+    <section id="album-view" class="view hidden-view">
+      <header class="album-header">
+        <button id="btn-back-home" class="icon-btn" title="Volver al Inicio">←</button>
+        <h2 class="album-name">Mi Álbum de Chochas</h2>
+      </header>
+
+      <main class="sticker-grid" id="albumGrid">
+        <!-- Panini stickers will be injected here -->
+      </main>
+
+      <div class="fab-container">
+        <button id="addChochaBtn" class="fab-btn" title="Añadir Personaje">
+          <span class="icon">+</span>
+          <span class="btn-text">Personaje</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Modal: Add Chocha -->
+    <div id="add-chocha-modal" class="modal hidden-modal">
+      <div class="modal-content sticker-style-modal">
+        <span class="close-modal">&times;</span>
+        <h3>Nueva Chocha Legendaria</h3>
+        <form id="addChochaForm">
+          <div class="form-group photo-upload-group">
+            <div class="photo-preview" id="photoPreview">
+              <span>Subir Foto</span>
+            </div>
+            <input type="file" id="chochaPhoto" accept="image/*" required>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="chochaName">Nombre</label>
+              <input type="text" id="chochaName" placeholder="Nombre de la Chocha" required>
+            </div>
+            <div class="form-group">
+              <label for="chochaAge">Edad</label>
+              <input type="number" id="chochaAge" placeholder="25">
+            </div>
+            <div class="form-group">
+              <label for="chochaNationality">Nacionalidad</label>
+              <select id="chochaNationality">
+                <!-- Options injected by JS -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="chochaAcqDate">Fecha de Entrada</label>
+              <input type="date" id="chochaAcqDate" required>
+            </div>
+
+            <div class="form-group full-width toggle-group">
+              <label class="checkbox-container">
+                <input type="checkbox" id="chochaIsVigente" checked>
+                <span class="checkmark"></span>
+                ¿Sigue Vigente? (Omitir fecha de salida)
+              </label>
+            </div>
+
+            <div id="depDateGroup" class="form-group full-width" style="display: none;">
+              <label for="chochaDepDate">Fecha de Salida</label>
+              <input type="date" id="chochaDepDate">
+            </div>
+
+            <div class="form-group full-width skills-input-container">
+              <label>Habilidades (1-5 estrellas)</label>
+              <div class="skills-grid">
+                <div class="skill-item">
+                  <span>Mamando</span>
+                  <div class="star-rating" data-skill="mamando">
+                    <span class="star" data-value="1">★</span>
+                    <span class="star" data-value="2">★</span>
+                    <span class="star" data-value="3">★</span>
+                    <span class="star" data-value="4">★</span>
+                    <span class="star" data-value="5">★</span>
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <span>Brincando</span>
+                  <div class="star-rating" data-skill="brincando">
+                    <span class="star" data-value="1">★</span>
+                    <span class="star" data-value="2">★</span>
+                    <span class="star" data-value="3">★</span>
+                    <span class="star" data-value="4">★</span>
+                    <span class="star" data-value="5">★</span>
+                  </div>
+                </div>
+                <div class="skill-item">
+                  <span>Movimiento</span>
+                  <div class="star-rating" data-skill="movimiento">
+                    <span class="star" data-value="1">★</span>
+                    <span class="star" data-value="2">★</span>
+                    <span class="star" data-value="3">★</span>
+                    <span class="star" data-value="4">★</span>
+                    <span class="star" data-value="5">★</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Additional Characteristics Section -->
+            <div class="form-group full-width skills-input-container">
+              <label>Características Adicionales</label>
+              <div class="skills-grid">
+                <div class="skill-item-select">
+                  <span>Gordura</span>
+                  <select id="chochaGordura" class="char-select" required>
+                    <option value="" disabled selected>Seleccionar...</option>
+                    <option value="5">Flaca (5 pts)</option>
+                    <option value="4">Promedio (4 pts)</option>
+                    <option value="2">Gorda (2 pts)</option>
+                    <option value="1">Volqueta (1 pt)</option>
+                  </select>
+                </div>
+                <div class="skill-item-select">
+                  <span>Color</span>
+                  <select id="chochaColor" class="char-select" required>
+                    <option value="" disabled selected>Seleccionar...</option>
+                    <option value="5">Blanquita (5 pts)</option>
+                    <option value="4">Morenita (4 pts)</option>
+                    <option value="3">Negrita (3 pts)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="chochaDesc">Descripción / Stats (Opcional)</label>
+              <textarea id="chochaDesc" rows="2" placeholder="Algún detalle adicional sobre el personaje..."></textarea>
+            </div>
+          </div>
+
+          <button type="submit" class="save-btn">Guardar Personaje</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="detail-modal" class="modal hidden-modal">
+      <div class="modal-content detail-card-content">
+        <div id="detail-body">
+          <!-- Content injected by JS -->
+        </div>
+        <button id="btn-close-detail" class="primary-btn">Cerrar y Volver</button>
+      </div>
+    </div>
+
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
