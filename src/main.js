@@ -1,51 +1,14 @@
 import './style.css'
+import { supabase } from './supabase'
 
-// State
+// --- State ---
 const state = {
-  currentView: 'home', // 'home' | 'album'
-  chochas: [
-    {
-      id: 1,
-      name: 'Espíritu del Bosque',
-      age: 850,
-      nationality: '🇨🇴',
-      countryCode: 'COL',
-      acqDate: '2023-01-15',
-      isVigente: true,
-      depDate: '',
-      image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=2164&auto=format&fit=crop',
-      desc: 'Guardián místico de los bosques antiguos.',
-      skills: { mamando: 5, brincando: 4, movimiento: 5 },
-      averageRating: 4.7
-    },
-    {
-      id: 2,
-      name: 'Isabella García',
-      age: 28,
-      nationality: '🇲🇽',
-      countryCode: 'MEX',
-      acqDate: '2022-05-10',
-      isVigente: false,
-      depDate: '2024-05-10',
-      image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=60',
-      desc: 'Exploradora intrépida.',
-      skills: { mamando: 4, brincando: 3, movimiento: 4 },
-      averageRating: 3.7
-    },
-    {
-      id: 3,
-      name: 'Sofía Martínez',
-      age: 24,
-      nationality: '🇪🇸',
-      countryCode: 'ESP',
-      acqDate: '2023-08-20',
-      depDate: '2024-02-20',
-      image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=500&auto=format&fit=crop&q=60',
-      desc: 'Reina del arte y el color.',
-      skills: { mamando: 5, brincando: 5, movimiento: 5 },
-      averageRating: 5.0
-    }
-  ],
+  currentView: 'login', // 'login' | 'home' | 'album' | 'friends'
+  user: null,
+  profile: null,
+  chochas: [],
+  friends: [],
+  viewingFriendId: null, // If viewing someone else's album
   tempSkills: { mamando: 0, brincando: 0, movimiento: 0 }
 };
 
@@ -75,11 +38,14 @@ const flags = [
   { name: 'Venezuela', emoji: '🇻🇪', code: 'VEN' }
 ];
 
-// DOM Elements
+// --- DOM Elements ---
 const views = {
+  login: document.getElementById('login-view'),
   home: document.getElementById('home-view'),
-  album: document.getElementById('album-view')
+  album: document.getElementById('album-view'),
+  friends: document.getElementById('friends-view')
 };
+
 const albumGrid = document.getElementById('albumGrid');
 const modal = document.getElementById('add-chocha-modal');
 const detailModal = document.getElementById('detail-modal');
@@ -87,214 +53,122 @@ const detailBody = document.getElementById('detail-body');
 const photoPreview = document.getElementById('photoPreview');
 const chochaPhotoInput = document.getElementById('chochaPhoto');
 const nationalitySelect = document.getElementById('chochaNationality');
+const friendsGrid = document.getElementById('friendsGrid');
 
 // --- Initialization ---
-function init() {
+async function init() {
   setupNavigation();
+  setupAuth();
   setupModal();
+  setupFriends();
   populateNationalities();
-  renderAlbum();
+
+  // Check current session
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    handleLoggedUser(session.user);
+  }
 }
 
-// --- Navigation Logic ---
-function setupNavigation() {
-  document.getElementById('btn-my-album').addEventListener('click', () => switchView('album'));
-  document.getElementById('btn-back-home').addEventListener('click', () => switchView('home'));
-}
+// --- Auth Logic ---
+function setupAuth() {
+  const loginForm = document.getElementById('login-form');
+  const registerForm = document.getElementById('register-form');
+  const showRegister = document.getElementById('btn-show-register');
+  const showLogin = document.getElementById('btn-show-login');
 
-function switchView(viewName) {
-  // Hide all views
-  Object.values(views).forEach(el => {
-    el.classList.remove('active-view');
-    el.classList.add('hidden-view'); // Ensure hidden class handles display:none
-    setTimeout(() => {
-      if (!el.classList.contains('active-view')) el.style.display = 'none';
-    }, 500); // Wait for fade out if we had one, but CSS handles it simpler
-  });
+  showRegister.onclick = () => {
+    loginForm.classList.add('hidden-view');
+    registerForm.classList.remove('hidden-view');
+  };
 
-  // Show target view
-  const target = views[viewName];
-  target.style.display = 'flex'; // Force display flex before adding active class for animation
-  // Small delay to allow display change to register before opacity transition
-  setTimeout(() => {
-    target.classList.remove('hidden-view');
-    target.classList.add('active-view');
-  }, 10);
+  showLogin.onclick = () => {
+    registerForm.classList.add('hidden-view');
+    loginForm.classList.remove('hidden-view');
+  };
 
-  state.currentView = viewName;
-}
-
-// --- Rendering ---
-function renderAlbum() {
-  albumGrid.innerHTML = '';
-  // Sort by rating descending
-  const sortedChochas = [...state.chochas].sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
-
-  sortedChochas.forEach(chocha => {
-    const card = document.createElement('div');
-    card.className = 'panini-sticker';
-    card.innerHTML = `
-      <div class="sticker-rating-badge">
-        <div class="rating-label">CALIDAD DE PERSONAJE</div>
-        <div class="rating-value">${chocha.averageRating ? chocha.averageRating.toFixed(1) : '0.0'} <span>★</span></div>
-      </div>
-      <div class="sticker-top">
-        <span class="sticker-flag">${chocha.nationality}</span>
-        <span class="sticker-country-code">${chocha.countryCode || 'INT'}</span>
-      </div>
-      <div class="sticker-image-wrapper">
-        <img src="${chocha.image}" alt="${chocha.name}" class="sticker-image">
-      </div>
-        <div class="sticker-info">
-          <h3 class="sticker-name">${chocha.name}</h3>
-          <div class="sticker-details">
-            <span>EDAD: <strong>${chocha.age || '?'}</strong></span>
-            <div class="sticker-dates">
-               <span>IN: ${formatDate(chocha.acqDate)}</span>
-               ${chocha.isVigente
-        ? `<span class="sticker-status-badge">VIGENTE</span>`
-        : `<span>OUT: ${formatDate(chocha.depDate)}</span>`
-      }
-            </div>
-          </div>
-        </div>
-      `;
-    card.addEventListener('click', () => openDetailModal(chocha));
-    albumGrid.appendChild(card);
-  });
-}
-
-function openDetailModal(chocha) {
-  detailBody.innerHTML = `
-      <div class="detail-header">
-        <span style="font-size: 3rem;">${chocha.nationality}</span>
-        <div class="sticker-rating-badge" style="position: static; transform: none;">
-          ${chocha.averageRating.toFixed(1)} <span>★</span>
-        </div>
-      </div>
-      
-      <div class="detail-main-info">
-        <h2 class="app-title" style="font-size: 2.5rem; margin:0;">${chocha.name}</h2>
-        <p style="color: var(--panini-yellow); font-weight: 700;">${chocha.countryCode} | EDAD: ${chocha.age}</p>
-        <img src="${chocha.image}" class="detail-image" alt="${chocha.name}">
-        <p style="font-style: italic; opacity: 0.8; margin-top: 1rem;">"${chocha.desc || 'Sin descripción.'}"</p>
-      </div>
-  
-      <div class="detail-stats-grid">
-        <div class="detail-skill-row">
-          <span>Mamando</span>
-          <div class="detail-skill-stars">${'★'.repeat(chocha.skills.mamando)}${'☆'.repeat(5 - chocha.skills.mamando)}</div>
-        </div>
-        <div class="detail-skill-row">
-          <span>Brincando</span>
-          <div class="detail-skill-stars">${'★'.repeat(chocha.skills.brincando)}${'☆'.repeat(5 - chocha.skills.brincando)}</div>
-        </div>
-        <div class="detail-skill-row">
-          <span>Movimiento</span>
-          <div class="detail-skill-stars">${'★'.repeat(chocha.skills.movimiento)}${'☆'.repeat(5 - chocha.skills.movimiento)}</div>
-        </div>
-        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 5px; font-size: 0.8rem; opacity: 0.7;">
-          <p>Entrada: ${formatDate(chocha.acqDate)}</p>
-          <p>Salida: ${chocha.isVigente ? 'VIGENTE' : formatDate(chocha.depDate)}</p>
-        </div>
-      </div>
-    `;
-  detailModal.classList.remove('hidden-modal');
-}
-
-function formatDate(dateString) {
-  if (!dateString) return '--/--/--';
-  const options = { day: '2-digit', month: '2-digit', year: '2-digit' };
-  return new Date(dateString).toLocaleDateString('es-ES', options);
-}
-
-// --- Modal & Form Logic ---
-function setupModal() {
-  // Toggle Vigente/DepDate visibility
-  const isVigenteCheckbox = document.getElementById('chochaIsVigente');
-  const depDateGroup = document.getElementById('depDateGroup');
-
-  isVigenteCheckbox.addEventListener('change', () => {
-    depDateGroup.style.display = isVigenteCheckbox.checked ? 'none' : 'block';
-  });
-
-  // Star Rating Interaction
-  const starContainers = document.querySelectorAll('.star-rating');
-  starContainers.forEach(container => {
-    const stars = container.querySelectorAll('.star');
-    const skillName = container.dataset.skill;
-
-    stars.forEach(star => {
-      star.addEventListener('click', () => {
-        const rating = parseInt(star.dataset.value);
-        state.tempSkills[skillName] = rating;
-
-        // Update UI
-        stars.forEach(s => {
-          if (parseInt(s.dataset.value) <= rating) {
-            s.classList.add('active');
-          } else {
-            s.classList.remove('active');
-          }
-        });
-      });
-    });
-  });
-
-  // Open
-  document.getElementById('addChochaBtn').addEventListener('click', () => {
-    modal.classList.remove('hidden-modal');
-    // Reset form
-    document.getElementById('addChochaForm').reset();
-    state.tempSkills = { mamando: 0, brincando: 0, movimiento: 0 };
-    document.querySelectorAll('.star').forEach(s => s.classList.remove('active'));
-    photoPreview.innerHTML = '<span>Subir Foto</span>';
-    photoPreview.style.backgroundImage = 'none';
-  });
-
-  // Close
-  document.querySelector('.close-modal').addEventListener('click', () => {
-    modal.classList.add('hidden-modal');
-  });
-
-  document.getElementById('btn-close-detail').addEventListener('click', () => {
-    detailModal.classList.add('hidden-modal');
-  });
-
-  // Photo Upload Preview
-  photoPreview.addEventListener('click', () => chochaPhotoInput.click());
-  chochaPhotoInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (f) => {
-        photoPreview.innerHTML = ''; // Remove text
-        photoPreview.style.backgroundImage = `url(${f.target.result})`;
-        photoPreview.style.backgroundSize = 'cover';
-        photoPreview.style.backgroundPosition = 'center';
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-
-  // Save Form
-  document.getElementById('addChochaForm').addEventListener('submit', (e) => {
+  // Login
+  loginForm.onsubmit = async (e) => {
     e.preventDefault();
-    addNewChocha();
-  });
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return alert(error.message);
+    handleLoggedUser(data.user);
+  };
+
+  // Register
+  registerForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('reg-username').value;
+    const email = document.getElementById('reg-email').value;
+    const password = document.getElementById('reg-password').value;
+
+    // 1. Sign Up
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) return alert(error.message);
+
+    // 2. Create Profile
+    const { error: pError } = await supabase.from('profiles').insert([
+      { id: data.user.id, username, email }
+    ]);
+    if (pError) return alert('Error creando perfil: ' + pError.message);
+
+    alert('Registro exitoso. Revisa tu email para confirmar (si está activado).');
+    handleLoggedUser(data.user);
+  };
+
+  document.getElementById('btn-logout').onclick = async () => {
+    await supabase.auth.signOut();
+    state.user = null;
+    state.profile = null;
+    switchView('login');
+  };
 }
 
-function populateNationalities() {
-  flags.forEach(flag => {
-    const option = document.createElement('option');
-    option.value = flag.code; // Use code as value for logic, but we need to store emoji too
-    option.dataset.emoji = flag.emoji;
-    option.textContent = `${flag.emoji} ${flag.name}`;
-    nationalitySelect.appendChild(option);
-  });
+async function handleLoggedUser(user) {
+  state.user = user;
+
+  // Fetch Profile
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+  state.profile = profile;
+
+  if (profile) {
+    document.getElementById('user-greeting').textContent = `¡Hola, ${profile.username}!`;
+    document.getElementById('user-id-display').textContent = `ID Amigos: ${profile.username}`;
+  }
+
+  switchView('home');
+  fetchMyCharacters();
 }
 
-function addNewChocha() {
+// --- Character Logic (Supabase) ---
+async function fetchMyCharacters() {
+  const { data, error } = await supabase
+    .from('characters')
+    .select('*')
+    .eq('user_id', state.user.id);
+
+  if (!error) {
+    state.chochas = data || [];
+    renderAlbum();
+  }
+}
+
+async function fetchFriendCharacters(friendId) {
+  const { data, error } = await supabase
+    .from('characters')
+    .select('*')
+    .eq('user_id', friendId);
+
+  if (!error) {
+    state.chochas = data || [];
+    renderAlbum();
+  }
+}
+
+async function addNewChocha() {
   const name = document.getElementById('chochaName').value;
   const age = document.getElementById('chochaAge').value;
   const nationalityOption = nationalitySelect.options[nationalitySelect.selectedIndex];
@@ -305,46 +179,260 @@ function addNewChocha() {
   const gordura = document.getElementById('chochaGordura').value;
   const color = document.getElementById('chochaColor').value;
 
-  // Validation for skills and characteristics
   if (state.tempSkills.mamando === 0 || state.tempSkills.brincando === 0 || state.tempSkills.movimiento === 0 || !gordura || !color) {
-    alert('¡Debes completar todas las habilidades y características!');
-    return;
+    return alert('¡Debes completar todas las habilidades y características!');
   }
 
-  // Calculate average (total points / 5 categories)
-  const totalStars = state.tempSkills.mamando + state.tempSkills.brincando + state.tempSkills.movimiento + parseInt(gordura) + parseInt(color);
-  const averageRating = (totalStars / 5).toFixed(1);
+  const totalPoints = state.tempSkills.mamando + state.tempSkills.brincando + state.tempSkills.movimiento + parseInt(gordura) + parseInt(color);
+  const averageRating = (totalPoints / 5).toFixed(1);
 
   const file = chochaPhotoInput.files[0];
-  if (!file) {
-    alert('¡Falta la foto de la chocha!');
-    return;
-  }
+  if (!file) return alert('¡Falta la foto!');
 
+  // Conversion for storage (Base64 for simplicity in MVP, Storage in future)
   const reader = new FileReader();
-  reader.onload = (f) => {
-    const newChocha = {
-      id: Date.now(),
+  reader.onload = async (f) => {
+    const newChar = {
+      user_id: state.user.id,
       name,
       age,
       nationality: nationalityOption.dataset.emoji,
-      countryCode: nationalityOption.value,
-      acqDate,
-      isVigente,
-      depDate: isVigente ? '' : depDate,
+      country_code: nationalityOption.value,
+      acq_date: acqDate,
+      is_vigente: isVigente,
+      dep_date: isVigente ? null : depDate,
       desc,
-      image: f.target.result,
-      skills: { ...state.tempSkills },
+      image_data: f.target.result,
+      skills: state.tempSkills,
       characteristics: { gordura, color },
-      averageRating: parseFloat(averageRating)
+      average_rating: parseFloat(averageRating)
     };
 
-    state.chochas.push(newChocha);
-    renderAlbum();
+    const { error } = await supabase.from('characters').insert([newChar]);
+    if (error) return alert('Error guardando: ' + error.message);
+
     modal.classList.add('hidden-modal');
+    fetchMyCharacters();
   };
   reader.readAsDataURL(file);
 }
 
-// Start
+// --- Friends Logic ---
+function setupFriends() {
+  document.getElementById('btn-add-friend').onclick = async () => {
+    const friendUsername = document.getElementById('friend-id-input').value;
+    if (!friendUsername) return;
+
+    // 1. Find user by username
+    const { data: friendProfile, error } = await supabase
+      .from('profiles')
+      .select('id, username')
+      .eq('username', friendUsername)
+      .single();
+
+    if (error || !friendProfile) return alert('Usuario no encontrado');
+
+    // 2. Add to friends (simplified relation)
+    const { error: fError } = await supabase.from('friends').insert([
+      { user_id: state.user.id, friend_id: friendProfile.id }
+    ]);
+
+    if (fError) {
+      if (fError.code === '23505') return alert('Ya son amigos');
+      return alert('Error agregando amigo: ' + fError.message);
+    }
+
+    alert('¡Amigo agregado!');
+    fetchFriends();
+  };
+}
+
+async function fetchFriends() {
+  // En Supabase necesitamos una tabla 'friends' con (user_id, friend_id)
+  const { data, error } = await supabase
+    .from('friends')
+    .select('friend_id, profiles!friends_friend_id_fkey(username)')
+    .eq('user_id', state.user.id);
+
+  if (!error) {
+    state.friends = data.map(f => ({ id: f.friend_id, username: f.profiles.username }));
+    renderFriends();
+  }
+}
+
+function renderFriends() {
+  friendsGrid.innerHTML = '';
+  state.friends.forEach(friend => {
+    const div = document.createElement('div');
+    div.className = 'friend-card';
+    div.innerHTML = `
+      <div class="friend-info">
+        <h4>${friend.username}</h4>
+        <p>Toca para ver su álbum</p>
+      </div>
+      <span class="icon">➜</span>
+    `;
+    div.onclick = () => {
+      state.viewingFriendId = friend.id;
+      document.getElementById('album-title').textContent = `Álbum de ${friend.username}`;
+      document.getElementById('addChochaBtn').parentElement.style.display = 'none'; // Hide FAB
+      fetchFriendCharacters(friend.id);
+      switchView('album');
+    };
+    friendsGrid.appendChild(div);
+  });
+}
+
+// --- NavigationLogic ---
+function setupNavigation() {
+  document.getElementById('btn-my-album').onclick = () => {
+    state.viewingFriendId = null;
+    document.getElementById('album-title').textContent = 'Mi Álbum';
+    document.getElementById('addChochaBtn').parentElement.style.display = 'block';
+    fetchMyCharacters();
+    switchView('album');
+  };
+  document.getElementById('btn-friends').onclick = () => {
+    fetchFriends();
+    switchView('friends');
+  };
+  document.getElementById('btn-back-home').onclick = () => switchView('home');
+  document.getElementById('btn-back-home-friends').onclick = () => switchView('home');
+}
+
+function switchView(viewName) {
+  Object.values(views).forEach(v => v.classList.add('hidden-view'));
+  views[viewName].classList.remove('hidden-view');
+  state.currentView = viewName;
+}
+
+// --- Modals, Rendering & Helpers ---
+function renderAlbum() {
+  albumGrid.innerHTML = '';
+  const sorted = [...state.chochas].sort((a, b) => b.average_rating - a.average_rating);
+
+  sorted.forEach(chocha => {
+    const card = document.createElement('div');
+    card.className = 'panini-sticker';
+    card.innerHTML = `
+      <div class="sticker-rating-badge">
+        <div class="rating-label">CALIDAD DE PERSONAJE</div>
+        <div class="rating-value">${chocha.average_rating.toFixed(1)} <span>★</span></div>
+      </div>
+      <div class="sticker-top">
+        <span class="sticker-flag">${chocha.nationality}</span>
+        <span class="sticker-country-code">${chocha.country_code || 'INT'}</span>
+      </div>
+      <div class="sticker-image-wrapper">
+        <img src="${chocha.image_data}" alt="${chocha.name}" class="sticker-image">
+      </div>
+      <div class="sticker-info">
+        <h3 class="sticker-name">${chocha.name}</h3>
+        <div class="sticker-details">
+          <span>EDAD: <strong>${chocha.age || '?'}</strong></span>
+          <div class="sticker-dates">
+             <span>IN: ${formatDate(chocha.acq_date)}</span>
+             ${chocha.is_vigente
+        ? `<span class="sticker-status-badge">VIGENTE</span>`
+        : `<span>OUT: ${formatDate(chocha.dep_date)}</span>`
+      }
+          </div>
+        </div>
+      </div>
+    `;
+    card.onclick = () => openDetailModal(chocha);
+    albumGrid.appendChild(card);
+  });
+}
+
+function openDetailModal(chocha) {
+  const gorduraLabel = { '5': 'Flaca', '4': 'Promedio', '2': 'Gorda', '1': 'Volqueta' }[chocha.characteristics.gordura];
+  const colorLabel = { '5': 'Blanquita', '4': 'Morenita', '3': 'Negrita' }[chocha.characteristics.color];
+
+  detailBody.innerHTML = `
+    <div class="detail-header">
+      <span style="font-size: 3rem;">${chocha.nationality}</span>
+      <div class="sticker-rating-badge" style="position: static; transform: none; padding: 10px;">
+         <div class="rating-label">CALIDAD DE PERSONAJE</div>
+         <div class="rating-value" style="font-size: 1.5rem;">${chocha.average_rating.toFixed(1)} <span>★</span></div>
+      </div>
+    </div>
+    <div class="detail-main-info">
+      <h2 class="app-title" style="font-size: 2.5rem; margin:0; line-height:1.2;">${chocha.name}</h2>
+      <img src="${chocha.image_data}" class="detail-image" alt="${chocha.name}">
+      <p style="font-style: italic; opacity: 0.8;">"${chocha.desc || 'Sin descripción.'}"</p>
+    </div>
+    <div class="detail-stats-grid">
+      <div class="detail-skill-row"><span>Mamando</span><span>${'★'.repeat(chocha.skills.mamando)}</span></div>
+      <div class="detail-skill-row"><span>Brincando</span><span>${'★'.repeat(chocha.skills.brincando)}</span></div>
+      <div class="detail-skill-row"><span>Movimiento</span><span>${'★'.repeat(chocha.skills.movimiento)}</span></div>
+      <div class="detail-skill-row"><span>Gordura</span><span>${gorduraLabel}</span></div>
+      <div class="detail-skill-row"><span>Color</span><span>${colorLabel}</span></div>
+    </div>
+  `;
+  detailModal.classList.remove('hidden-modal');
+}
+
+function formatDate(date) {
+  if (!date) return '--/--/--';
+  return new Date(date).toLocaleDateString();
+}
+
+function setupModal() {
+  document.getElementById('addChochaBtn').onclick = () => {
+    modal.classList.remove('hidden-modal');
+    document.getElementById('addChochaForm').reset();
+    state.tempSkills = { mamando: 0, brincando: 0, movimiento: 0 };
+    document.querySelectorAll('.star').forEach(s => s.classList.remove('active'));
+    photoPreview.style.backgroundImage = 'none';
+    photoPreview.innerHTML = '<span>Subir Foto</span>';
+  };
+
+  document.querySelector('.close-modal').onclick = () => modal.classList.add('hidden-modal');
+  document.getElementById('btn-close-detail').onclick = () => detailModal.classList.add('hidden-modal');
+
+  // Star Logic
+  document.querySelectorAll('.star-rating').forEach(cont => {
+    cont.querySelectorAll('.star').forEach(star => {
+      star.onclick = () => {
+        const val = parseInt(star.dataset.value);
+        state.tempSkills[cont.dataset.skill] = val;
+        cont.querySelectorAll('.star').forEach(s => {
+          s.classList.toggle('active', parseInt(s.dataset.value) <= val);
+        });
+      };
+    });
+  });
+
+  photoPreview.onclick = () => chochaPhotoInput.click();
+  chochaPhotoInput.onchange = (e) => {
+    const reader = new FileReader();
+    reader.onload = f => {
+      photoPreview.innerHTML = '';
+      photoPreview.style.backgroundImage = `url(${f.target.result})`;
+      photoPreview.style.backgroundSize = 'cover';
+    };
+    reader.readAsDataURL(e.target.files[0]);
+  };
+
+  document.getElementById('addChochaForm').onsubmit = (e) => {
+    e.preventDefault();
+    addNewChocha();
+  };
+
+  document.getElementById('chochaIsVigente').onchange = (e) => {
+    document.getElementById('depDateGroup').style.display = e.target.checked ? 'none' : 'block';
+  };
+}
+
+function populateNationalities() {
+  flags.forEach(flag => {
+    const opt = document.createElement('option');
+    opt.value = flag.code;
+    opt.dataset.emoji = flag.emoji;
+    opt.textContent = `${flag.emoji} ${flag.name}`;
+    nationalitySelect.appendChild(opt);
+  });
+}
+
 init();
