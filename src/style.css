@@ -171,8 +171,15 @@ body {
 .detail-actions {
   display: flex;
   gap: 10px;
-  margin-top: 2rem;
+  margin-top: 1rem;
   width: 100%;
+}
+
+.btn-edit,
+.btn-delete {
+  padding: 0.8rem 0.5rem;
+  font-size: 0.9rem;
+  min-height: auto;
 }
 
 .btn-edit {
@@ -323,9 +330,28 @@ body {
 
 @media (max-width: 600px) {
   .sticker-grid {
-    grid-template-columns: repeat(2, 1fr);
-    /* 2 columns on mobile */
-    gap: 1rem;
+    grid-template-columns: repeat(3, 1fr);
+    /* 3 columns for smaller stickers */
+    gap: 0.5rem;
+  }
+
+  .panini-sticker {
+    border-width: 4px;
+    /* Thinner border for smaller stickers */
+    padding: 4px;
+  }
+
+  .sticker-name {
+    font-size: 0.9rem;
+  }
+
+  .sticker-flag {
+    font-size: 1.2rem;
+  }
+
+  .sticker-country-code {
+    font-size: 0.7rem;
+    padding: 1px 4px;
   }
 
   .app-title {
@@ -708,11 +734,11 @@ textarea:focus {
 .detail-card-content {
   background: var(--panini-bg);
   border: 4px solid var(--panini-accent);
-  width: 95% !important;
-  max-width: 450px !important;
-  padding: 1.5rem !important;
+  width: 92% !important;
+  max-width: 380px !important;
+  padding: 1.2rem !important;
   border-radius: 12px;
-  max-height: 90vh;
+  max-height: 95vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -721,39 +747,42 @@ textarea:focus {
 #btn-close-detail {
   background-color: var(--panini-accent) !important;
   color: #2e1065 !important;
-  margin-top: 2rem !important;
+  margin-top: 1.5rem !important;
   flex-shrink: 0;
 }
 
 .detail-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
+  align-items: center;
+  margin-bottom: 0.8rem;
 }
 
 .detail-main-info {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.2rem;
 }
 
 .detail-image {
   width: 100%;
-  max-width: 300px;
+  max-width: 200px;
+  /* Reduced for better mobile fit */
   aspect-ratio: 1;
   object-fit: cover;
-  border: 6px solid white;
+  border: 4px solid white;
   border-radius: 4px;
-  margin: 1rem 0;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  margin: 0.8rem 0;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
 }
 
 .detail-stats-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1rem;
+  gap: 0.5rem;
+  /* Reduced gap */
   background: rgba(255, 255, 255, 0.05);
-  padding: 1.5rem;
+  padding: 1rem;
+  /* Reduced padding */
   border-radius: 12px;
 }
 
@@ -761,11 +790,12 @@ textarea:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-size: 0.9rem;
 }
 
 .detail-skill-stars {
-  color: var(--panini-accent);
-  font-size: 1.2rem;
+  color: #ffcc00;
+  font-size: 1rem;
 }
 
 .close-detail-modal {
