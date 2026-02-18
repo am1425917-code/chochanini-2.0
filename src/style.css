@@ -330,9 +330,9 @@ body {
 
 @media (max-width: 600px) {
   .sticker-grid {
-    grid-template-columns: repeat(3, 1fr);
-    /* 3 columns for smaller stickers */
-    gap: 0.5rem;
+    grid-template-columns: repeat(2, 1fr);
+    /* Volvemos a 2 columnas */
+    gap: 0.8rem;
   }
 
   .panini-sticker {
@@ -753,9 +753,20 @@ textarea:focus {
 
 .detail-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  /* Centramos el badge/emoji */
   align-items: center;
   margin-bottom: 0.8rem;
+  padding-top: 1rem;
+}
+
+.detail-card-content .sticker-rating-badge {
+  position: relative;
+  /* Evita que flote sobre la X */
+  top: 0;
+  right: 0;
+  transform: none;
+  margin-left: 10px;
 }
 
 .detail-main-info {

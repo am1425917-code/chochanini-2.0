@@ -443,16 +443,16 @@ function openDetailModal(chocha) {
 
   detailBody.innerHTML = `
     <div class="detail-header">
-      <span style="font-size: 3rem;">${chocha.nationality}</span>
-      <div class="sticker-rating-badge" style="position: static; transform: none; padding: 10px;">
+      <span style="font-size: 2.5rem;">${chocha.nationality}</span>
+      <div class="sticker-rating-badge">
          <div class="rating-label">CALIDAD DE PERSONAJE</div>
-         <div class="rating-value" style="font-size: 1.5rem;">${chocha.average_rating.toFixed(1)} <span>★</span></div>
+         <div class="rating-value">${chocha.average_rating.toFixed(1)} <span>★</span></div>
       </div>
     </div>
     <div class="detail-main-info">
-      <h2 class="app-title" style="font-size: 2.5rem; margin:0; line-height:1.2;">${chocha.name}</h2>
-      <img src="${chocha.image_data}" class="detail-image" alt="${chocha.name}" style="border: 2px solid #ffcc00;">
-      <p style="font-style: italic; opacity: 0.8; margin-top: 10px;">"${chocha.desc || 'Sin descripción.'}"</p>
+      <h2 class="app-title" style="font-size: 2rem; margin:0; line-height:1.2;">${chocha.name}</h2>
+      <img src="${chocha.image_data}" class="detail-image" alt="${chocha.name}" style="border: 2px solid #ffcc00; max-height: 200px; width: auto; max-width: 100%;">
+      <p style="font-style: italic; opacity: 0.8; margin-top: 5px; font-size: 0.9rem;">"${chocha.desc || 'Sin descripción.'}"</p>
     </div>
     <div class="detail-stats-grid">
       <div class="detail-skill-row"><span>Mamando</span><span>${renderStars(chocha.skills.mamando)}</span></div>
@@ -492,6 +492,7 @@ function prepareEdit(chocha) {
   modal.classList.remove('hidden-modal');
 
   document.getElementById('modal-title').textContent = "Editar Personaje";
+  document.getElementById('btn-save-chocha').textContent = "Guardar Cambios";
   document.getElementById('edit-chocha-id').value = chocha.id;
 
   // Populate fields
@@ -541,6 +542,7 @@ function setupModal() {
     modal.classList.remove('hidden-modal');
     document.getElementById('addChochaForm').reset();
     document.getElementById('modal-title').textContent = "Nuevo Personaje";
+    document.getElementById('btn-save-chocha').textContent = "Guardar Personaje";
     document.getElementById('edit-chocha-id').value = "";
     state.tempSkills = { mamando: 0, brincando: 0, movimiento: 0 };
     document.querySelectorAll('.star').forEach(s => s.classList.remove('active'));
