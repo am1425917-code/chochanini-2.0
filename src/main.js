@@ -207,7 +207,12 @@ async function fetchFriendCharacters(friendId) {
   }
 }
 
-async function addNewChocha() {
+async function saveChocha() {
+  const btn = document.getElementById('btn-save-chocha');
+  const originalText = btn.textContent;
+  btn.textContent = 'Guardando...';
+  btn.disabled = true;
+
   const name = document.getElementById('chochaName').value;
   const age = document.getElementById('chochaAge').value;
   const nationalityOption = nationalitySelect.options[nationalitySelect.selectedIndex];
@@ -217,52 +222,67 @@ async function addNewChocha() {
   const desc = document.getElementById('chochaDesc').value;
   const gordura = document.getElementById('chochaGordura').value;
   const color = document.getElementById('chochaColor').value;
+  const editId = document.getElementById('edit-chocha-id').value;
 
   if (state.tempSkills.mamando === 0 || state.tempSkills.brincando === 0 || state.tempSkills.movimiento === 0 || !gordura || !color) {
+    btn.textContent = originalText;
+    btn.disabled = false;
     return alert('¡Debes completar todas las habilidades y características!');
   }
 
   const totalPoints = state.tempSkills.mamando + state.tempSkills.brincando + state.tempSkills.movimiento + parseInt(gordura) + parseInt(color);
-  const averageRating = (totalPoints / 5).toFixed(1);
+  const average_rating = parseFloat((totalPoints / 5).toFixed(1));
+
+  const charData = {
+    user_id: state.user.id,
+    name,
+    age,
+    nationality: nationalityOption.dataset.emoji,
+    country_code: nationalityOption.value,
+    acq_date: acqDate,
+    is_vigente: isVigente,
+    dep_date: isVigente ? null : depDate,
+    desc,
+    skills: state.tempSkills,
+    characteristics: { gordura, color },
+    average_rating
+  };
 
   const file = chochaPhotoInput.files[0];
-  if (!file) return alert('¡Falta la foto!');
 
-  // Conversion for storage (Base64 for simplicity in MVP, Storage in future)
-  const reader = new FileReader();
-  reader.onload = async (f) => {
-    const editId = document.getElementById('edit-chocha-id').value;
+  const performSave = async (imageData) => {
+    if (imageData) charData.image_data = imageData;
 
-    const charData = {
-      user_id: state.user.id,
-      name,
-      age,
-      nationality: nationalityOption.dataset.emoji,
-      country_code: nationalityOption.value,
-      acq_date: acqDate,
-      is_vigente: isVigente,
-      dep_date: isVigente ? null : depDate,
-      desc,
-      image_data: f.target.result,
-      skills: state.tempSkills,
-      characteristics: { gordura, color },
-      average_rating: parseFloat(averageRating)
-    };
-
+    let error;
     if (editId) {
-      // Update
-      const { error } = await supabase.from('characters').update(charData).eq('id', editId);
-      if (error) return alert('Error al actualizar: ' + error.message);
+      const { error: err } = await supabase.from('characters').update(charData).eq('id', editId);
+      error = err;
     } else {
-      // Insert
-      const { error } = await supabase.from('characters').insert([charData]);
-      if (error) return alert('Error guardando: ' + error.message);
+      if (!imageData) {
+        btn.textContent = originalText;
+        btn.disabled = false;
+        return alert('¡Falta la foto!');
+      }
+      const { error: err } = await supabase.from('characters').insert([charData]);
+      error = err;
     }
+
+    btn.textContent = originalText;
+    btn.disabled = false;
+
+    if (error) return alert('Error al guardar: ' + error.message);
 
     modal.classList.add('hidden-modal');
     fetchMyCharacters();
   };
-  reader.readAsDataURL(file);
+
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (f) => performSave(f.target.result);
+    reader.readAsDataURL(file);
+  } else {
+    performSave(null); // No new photo, keep existing (or error if new)
+  }
 }
 
 // --- Friends Logic ---
@@ -392,12 +412,15 @@ function renderAlbum() {
 
   const statsContainer = document.getElementById('stats-container');
   const avgDisplay = document.getElementById('average-stars-display');
+  const statsTitle = document.getElementById('stats-title');
+
+  statsContainer.style.display = 'block';
+  avgDisplay.textContent = globalAvg;
 
   if (state.viewingFriendId) {
-    statsContainer.style.display = 'none'; // Hide stats when viewing others
+    statsTitle.textContent = "El promedio de calidad de chochas que tu amigo consume es de:";
   } else {
-    statsContainer.style.display = 'block';
-    avgDisplay.textContent = globalAvg;
+    statsTitle.textContent = "Felicidades. Tu promedio de calidad de chochas es de:";
   }
 
   sorted.forEach(chocha => {
@@ -579,7 +602,7 @@ function setupModal() {
 
   document.getElementById('addChochaForm').onsubmit = (e) => {
     e.preventDefault();
-    addNewChocha();
+    saveChocha();
   };
 
   document.getElementById('chochaIsVigente').onchange = (e) => {
